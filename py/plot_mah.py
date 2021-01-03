@@ -25,18 +25,46 @@ def nan_minmax(x):
     return np.array([np.nanmin(x), np.nanmax(x)])
 
 
-def bin_mah(x, nbins):
-    mi, ma = nan_minmax(x[:, 0])  # bin based on final mass
+def get_bins(x):
+    """Returns a set of bins going up decades in mass as 1.0En ->
+    1.0En+1, smallest and largest n is determined by the min and max
+    final values of x.
 
-    bin_edges = 10.**np.linspace(np.log10(mi), np.log10(ma), num=nbins+1)
+    :param x: (array) data to bin
+
+    :returns: bin edges
+
+    :rtype: (array)
+    """
+    
+    mi, ma = nan_minmax(x[:, 0])  # bin based on final mass
+    bin_edges = 10.**np.arange(int(np.log10(mi)), int(np.log10(ma)) + 2)
+
+    return bin_edges
+
+
+def bin_mah(x):
+
+    bin_edges = get_bins(x)
+    nbins = len(bin_edges) - 1
+
+    # Preallocate arrays for mean and standard deviation
     avg = np.zeros((nbins, x.shape[1]))
     std = np.zeros((nbins, x.shape[1]))
 
     for i in range(nbins):
+        # Get a mask containing the indices of the data in each bin
         mask = np.logical_and(x[:, 0] >= bin_edges[i],
                               x[:, 0] < bin_edges[i+1])
-        avg[i, :] = np.nanmean(x[mask, :], axis=0)
-        std[i, :] = np.nanstd(x[mask, :], axis=0)
+
+        # Get the actual data in the mask
+        tmp = x[mask, :]
+
+        # Normlise to final mass
+        tmp = norm_mvir(tmp)
+        
+        avg[i, :] = np.nanmean(tmp, axis=0)
+        std[i, :] = np.nanstd(tmp, axis=0)
 
         # Check distribution of mvir vals
         # for i in range(x.shape[1]):
@@ -78,7 +106,7 @@ def read_mah(fn='out.txt'):
     ...
 
     where '...' corresponds to the scale factor and progenitor mass,
-    one scale factor per line, later time first. 
+    one scale factor per line, later time first.
 
     """
 
@@ -100,7 +128,7 @@ def read_mah(fn='out.txt'):
         for l in f:
             if '#' in l:
                 # if i % 10 == 0: ax.plot(z[i, :], mvir[i, :], c='k', alpha=0.5)
-                i += 1    
+                i += 1
                 j = 0
             else:
                 l = l.strip('\n').split(' ')
@@ -117,10 +145,12 @@ def read_mah(fn='out.txt'):
     
     return z, all_z, mvir
 
+
 z, all_z, mvir = read_mah()
-norm_mvir = norm_mvir(mvir)
+# norm_mvir = norm_mvir(mvir)
 
 fig, ax = plt.subplots(figsize=(6, 6))
+ax.loglog(all_z, mvir)
 ax.set_xlabel('z')
 ax.set_ylabel('M (M$_\odot$/h)')
 ax.set_yscale('log')
@@ -129,7 +159,7 @@ fig.savefig('./out.pdf')
 # print(nan_minmax(mvir))
 
 nbins = 5
-avg, std, bin_edges = bin_mah(mvir, nbins)
+avg, std, bin_edges = bin_mah(mvir)
 c = get_cols(nbins)
 
 fig, ax = plt.subplots(figsize=(6, 6))
@@ -145,4 +175,4 @@ for i in range(avg.shape[0]):
     #             c=c[i], label=l)
 ax.legend()
 fig.tight_layout()
-fig.savefig('out_binned.pdf')
+fig.savefig('out_binned.pdf', bbox_inches='tight')
