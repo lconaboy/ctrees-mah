@@ -1,0 +1,5 @@
+A modified version of read_tree/ from the consistent-trees package
+(https://bitbucket.org/pbehroozi/consistent-trees/src/main/).
+
+To run, type ~make~ then run ~./mah~ in the directory containing the
+tree_x_x_x.dat files.
