@@ -15,7 +15,7 @@ prof:
 
 
 reg:
-	$(CC) $(CFLAGS) mah.c read_tree.c $(EXTRA_FLAGS) stringparse.c check_syscalls.c -o mah -lm
+	$(CC) $(CFLAGS) mah_binned.c read_tree.c $(EXTRA_FLAGS) stringparse.c check_syscalls.c -o mah -lm
 
 clean:
 	rm -f *~
